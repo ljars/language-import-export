@@ -11,7 +11,7 @@ public class LanguageManagerImportExport : MonoBehaviour
 #if UNITY_EDITOR
     private const char NEW_LINE = '\n';
     private const string ESCAPED_NEW_LINE = @"\n";
-    private const char QUOTE = '\"';
+    private const string QUOTE = "\"";
     private const string COMMA = ",";
     private const char XL_EQUALS = '=';
     private const char XL_ESCAPE = '\'';
@@ -118,7 +118,7 @@ public class LanguageManagerImportExport : MonoBehaviour
             builder.Append(QUOTE);
             builder.Append(COMMA);
             builder.Append(QUOTE);
-            string value = data.value.Replace(NEW_LINE.ToString(), ESCAPED_NEW_LINE);
+            string value = data.value.Replace(NEW_LINE.ToString(), ESCAPED_NEW_LINE).Replace(QUOTE, QUOTE+QUOTE);
             if (escapeExcelFormulas)
                 value = EscapeExcelFormulas(value);
             builder.Append(value);
