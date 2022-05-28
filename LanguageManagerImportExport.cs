@@ -74,8 +74,14 @@ public class LanguageManagerImportExport : MonoBehaviour
             path = EditorUtility.OpenFilePanelWithFilters("Importing CSV", "Assets/", new [] {"CSV", "csv"});
         if (!string.IsNullOrEmpty(path))
         {
-            string contents = File.ReadAllText(path);
-            LanguageManager.languageList.Add(LanguageFromString(contents));
+            // string contents = File.ReadAllText(path);
+            var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); 
+            using (var sr = new StreamReader(fs))
+            {
+                string contents = sr.ReadToEnd();
+                LanguageManager.languageList.Add(LanguageFromString(contents));
+                sr.Close();
+            }
         }
     }
 
