@@ -2,6 +2,10 @@ using System.Text;
 
 public class CsvReader
 {
+    private const char NEW_LINE = '\n';
+    private const char QUOTE = '\"';
+    private const char COMMA = ',';
+    
     private string csv = string.Empty;
     private int index = 0;
     private bool inQuotes = false;
@@ -44,7 +48,7 @@ public class CsvReader
     private void ProcessCharacter(StringBuilder builder)
     {
         var current = csv[index];
-        if (current != '\"')
+        if (current != QUOTE)
         {
             builder.Append(current);
             return;
@@ -57,7 +61,7 @@ public class CsvReader
         else if (InQuotes)
         {
             index++; // quotes are escaped as pairs of double quotes
-            builder.Append('\"');
+            builder.Append(QUOTE);
         }
         else if (!InQuotes)
         {
@@ -69,15 +73,15 @@ public class CsvReader
     {
         var current = csv[index];
 
-        if (current != ',' && current != '\"' && current != '\n')
+        if (current != COMMA && current != QUOTE && current != NEW_LINE)
             return false;
 
-        if (current == ',' && !InQuotes)
+        if (current == COMMA && !InQuotes)
         {
             return true;
         }
 
-        if (current == '\n' && !InQuotes)
+        if (current == NEW_LINE && !InQuotes)
         {
             return true;
         }
@@ -89,6 +93,6 @@ public class CsvReader
     {
         if (index + 1 >= csv.Length)
             return false;
-        return csv[index + 1] == '\"';
+        return csv[index + 1] == QUOTE;
     }
 }

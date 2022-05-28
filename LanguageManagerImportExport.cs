@@ -17,7 +17,8 @@ public class LanguageManagerImportExport : MonoBehaviour
     private const char XL_ESCAPE = '\'';
     private const char XL_PLUS = '+';
     private const char XL_MINUS = '-';
-    
+    private const string FILE_PREFIX = "language_";
+
     public string languageKey;
     [TextArea(10, 10)] public string text;
 
@@ -50,9 +51,9 @@ public class LanguageManagerImportExport : MonoBehaviour
     {
         string path;
         if (useJsonNotCsv)
-            path = EditorUtility.SaveFilePanelInProject("Exporting JSON", "language_" + languageKey, "json", "Export...");
+            path = EditorUtility.SaveFilePanelInProject("Exporting JSON", FILE_PREFIX + languageKey, "json", "Export...");
         else
-            path = EditorUtility.SaveFilePanelInProject("Exporting CSV", "language_" + languageKey, "csv", "Export...");
+            path = EditorUtility.SaveFilePanelInProject("Exporting CSV", FILE_PREFIX + languageKey, "csv", "Export...");
         if (!string.IsNullOrEmpty(path))
         {
             File.WriteAllText(path, LanguageToString());
@@ -66,7 +67,11 @@ public class LanguageManagerImportExport : MonoBehaviour
 
     public void OnClickImportFromFile()
     {
-        var path = EditorUtility.OpenFilePanelWithFilters("Select file", "Assets/", new [] {"CSV", "csv"});
+        string path;
+        if (useJsonNotCsv)
+            path = EditorUtility.OpenFilePanelWithFilters("Importing JSON", "Assets/", new [] {"JSON", "json"});
+        else
+            path = EditorUtility.OpenFilePanelWithFilters("Importing CSV", "Assets/", new [] {"CSV", "csv"});
         if (!string.IsNullOrEmpty(path))
         {
             string contents = File.ReadAllText(path);
