@@ -10,7 +10,7 @@ public class LanguageManagerImportExport : MonoBehaviour
 {
 #if UNITY_EDITOR
     private const char NEW_LINE = '\n';
-    private const string ESCAPED_NEW_LINE = @"\n";
+    // private const string ESCAPED_NEW_LINE = @"\n";
     private const string QUOTE = "\"";
     private const string COMMA = ",";
     private const char XL_EQUALS = '=';
@@ -104,26 +104,46 @@ public class LanguageManagerImportExport : MonoBehaviour
         }
     }
 
+    // private static string LanguageToCsv(Language language, bool escapeExcelFormulas)
+    // {
+    //     var builder = new StringBuilder();
+    //
+    //     foreach (var data in language.dataList)
+    //     {
+    //         builder.Append(QUOTE);
+    //         string key = data.key;
+    //         if (escapeExcelFormulas)
+    //             key = EscapeExcelFormulas(key);
+    //         builder.Append(key);
+    //         builder.Append(QUOTE);
+    //         builder.Append(COMMA);
+    //         builder.Append(QUOTE);
+    //         string value = data.value.Replace(NEW_LINE.ToString(), ESCAPED_NEW_LINE).Replace(QUOTE, QUOTE+QUOTE);
+    //         if (escapeExcelFormulas)
+    //             value = EscapeExcelFormulas(value);
+    //         builder.Append(value);
+    //         builder.Append(QUOTE);
+    //         builder.Append(NEW_LINE);
+    //     }
+    //
+    //     return builder.ToString();
+    // }
     private static string LanguageToCsv(Language language, bool escapeExcelFormulas)
     {
         var builder = new StringBuilder();
 
         foreach (var data in language.dataList)
         {
-            builder.Append(QUOTE);
-            string key = data.key;
+            string key = data.key.Replace(QUOTE, QUOTE+QUOTE);
+            string value = data.value.Replace(QUOTE, QUOTE+QUOTE);
             if (escapeExcelFormulas)
+            {
                 key = EscapeExcelFormulas(key);
-            builder.Append(key);
-            builder.Append(QUOTE);
-            builder.Append(COMMA);
-            builder.Append(QUOTE);
-            string value = data.value.Replace(NEW_LINE.ToString(), ESCAPED_NEW_LINE).Replace(QUOTE, QUOTE+QUOTE);
-            if (escapeExcelFormulas)
                 value = EscapeExcelFormulas(value);
-            builder.Append(value);
-            builder.Append(QUOTE);
-            builder.Append(NEW_LINE);
+            }
+
+            builder.Append(QUOTE).Append(key).Append(QUOTE).Append(COMMA).Append(QUOTE).Append(value)
+                .Append(QUOTE).Append(NEW_LINE);
         }
 
         return builder.ToString();
@@ -132,79 +152,102 @@ public class LanguageManagerImportExport : MonoBehaviour
     private static Language LanguageFromCsv(string data, string langKey, bool escapeExcelFormulas)
     {
         var language = new Language { languageKey = langKey, dataList = new List<LanguageData>() };
-        var splitData = data.Split(NEW_LINE);
-        foreach (var row in splitData)
+        var reader = new CsvReader(data);
+        while (true)
         {
-            ReadKeyValuePair(row, out var key, out var value);
-            if (string.IsNullOrEmpty(key))
-                continue;
-            var tempData = new LanguageData();
+            if (!reader.CanRead())
+                break;
+            var tempKey = reader.Read();
+            if (!reader.CanRead())
+                break;
+            var tempValue = reader.Read();
             if (escapeExcelFormulas)
-                key = UnescapeExcelFormulas(key);
-            tempData.key = key;
-            if (escapeExcelFormulas)
-                value = UnescapeExcelFormulas(value);
-            tempData.value = value.Replace(ESCAPED_NEW_LINE, NEW_LINE.ToString());
+            {
+                tempKey = UnescapeExcelFormulas(tempKey);
+                tempValue = UnescapeExcelFormulas(tempValue);
+            }
+            var tempData = new LanguageData { key = tempKey, value = tempValue };
             language.dataList.Add(tempData);
         }
-
         return language;
     }
 
-    private static void ReadKeyValuePair(string row, out string key, out string value)
-    {
-        int i = 0;
-        var keyBuilder = new StringBuilder();
-        var valueBuilder = new StringBuilder();
+    // private static Language LanguageFromCsv(string data, string langKey, bool escapeExcelFormulas)
+    // {
+    //     var language = new Language { languageKey = langKey, dataList = new List<LanguageData>() };
+    //     var splitData = data.Split(NEW_LINE);
+    //     foreach (var row in splitData)
+    //     {
+    //         ReadKeyValuePair(row, out var key, out var value);
+    //         if (string.IsNullOrEmpty(key))
+    //             continue;
+    //         var tempData = new LanguageData();
+    //         if (escapeExcelFormulas)
+    //             key = UnescapeExcelFormulas(key);
+    //         tempData.key = key;
+    //         if (escapeExcelFormulas)
+    //             value = UnescapeExcelFormulas(value);
+    //         tempData.value = value.Replace(ESCAPED_NEW_LINE, NEW_LINE.ToString());
+    //         language.dataList.Add(tempData);
+    //     }
+    //
+    //     return language;
+    // }
 
-        ConsumeUntilDelimiter(row, ref i, keyBuilder);
-        ConsumeUntilDelimiter(row, ref i, valueBuilder);
+    // private static void ReadKeyValuePair(string row, out string key, out string value)
+    // {
+    //     int i = 0;
+    //     var keyBuilder = new StringBuilder();
+    //     var valueBuilder = new StringBuilder();
+    //
+    //     ConsumeUntilDelimiter(row, ref i, keyBuilder);
+    //     ConsumeUntilDelimiter(row, ref i, valueBuilder);
+    //
+    //     key = keyBuilder.ToString();
+    //     value = valueBuilder.ToString();
+    // }
 
-        key = keyBuilder.ToString();
-        value = valueBuilder.ToString();
-    }
-
-    private static void ConsumeUntilDelimiter(string row, ref int i, StringBuilder builder)
-    {
-        bool inQuotes = false;
-        if (i < row.Length && row[i] == '"')
-        {
-            inQuotes = true;
-            i++;
-        }
-
-        while (i < row.Length)
-        {
-            if (row[i] == NEW_LINE)
-            {
-                i++;
-                break;
-            }
-            else if (inQuotes && row[i] == '"')
-            {
-                i++;
-                if (i < row.Length && row[i] == '"')
-                {
-                    builder.Append(row[i]);
-                    i++;
-                }
-                else
-                {
-                    inQuotes = false;
-                }
-
-                continue;
-            }
-            else if (row[i] == ',' && !inQuotes)
-            {
-                i++;
-                break;
-            }
-
-            builder.Append(row[i]);
-            i++;
-        }
-    }
+    // private static void ConsumeUntilDelimiter(string row, ref int i, StringBuilder builder)
+    // {
+    //     bool inQuotes = false;
+    //     if (i < row.Length && row[i] == '"')
+    //     {
+    //         inQuotes = true;
+    //         i++;
+    //     }
+    //
+    //     while (i < row.Length)
+    //     {
+    //         if (row[i] == NEW_LINE)
+    //         {
+    //             i++;
+    //             break;
+    //         }
+    //         else if (inQuotes && row[i] == '"')
+    //         {
+    //             i++;
+    //             if (i < row.Length && row[i] == '"')
+    //             {
+    //                 builder.Append(row[i]);
+    //                 i++;
+    //             }
+    //             else
+    //             {
+    //                 inQuotes = false;
+    //             }
+    //
+    //             continue;
+    //         }
+    //         else if (row[i] == ',' && !inQuotes)
+    //         {
+    //             i++;
+    //             break;
+    //         }
+    //
+    //         builder.Append(row[i]);
+    //         i++;
+    //     }
+    // }
 
     private static string EscapeExcelFormulas(string str)
     {
