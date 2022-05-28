@@ -19,14 +19,14 @@ public class LanguageManagerImportExportEditor : Editor
             (target as LanguageManagerImportExport)?.OnClickImport();
         }
 
-        if (GUILayout.Button("Import From File..."))
-        {
-            (target as LanguageManagerImportExport)?.OnClickImportFromFile();
-        }
         if (GUILayout.Button("Export To File..."))
         {
             (target as LanguageManagerImportExport)?.OnClickExportToFile();
-            
+        }
+        
+        if (GUILayout.Button("Import From File..."))
+        {
+            (target as LanguageManagerImportExport)?.OnClickImportFromFile();
         }
     }
 }
