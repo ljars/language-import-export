@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -20,20 +21,10 @@ public class LanguageManagerImportExport : MonoBehaviour
     public string languageKey;
     [TextArea(10, 10)] public string text;
 
-    [InspectorButton(nameof(OnClickExportLanguage))]
-    public bool export;
-
-    [InspectorButton(nameof(OnClickExportToFile))]
-    public bool exportToFile;
-
-    [InspectorButton(nameof(OnClickImportLanguage))]
-    public bool import;
-
     public bool useJsonNotCsv = false;
     public bool escapeExcelFormulas = true;
 
     private LanguageManager languageManager;
-
 
     private LanguageManager LanguageManager
     {
@@ -45,31 +36,41 @@ public class LanguageManagerImportExport : MonoBehaviour
         }
     }
 
-    public void OnClickExportLanguage()
+    public void OnClickExport()
     {
         text = LanguageToString();
     }
 
-    public void OnClickImportLanguage()
+    public void OnClickImport()
     {
-        LanguageManager.languageList.Add(LanguageFromString());
+        LanguageManager.languageList.Add(LanguageFromString(text));
     }
 
     public void OnClickExportToFile()
     {
-        string path = "Assets/language_" + languageKey + (useJsonNotCsv ? ".json" : ".csv");
-        try
+        string path;
+        if (useJsonNotCsv)
+            path = EditorUtility.SaveFilePanelInProject("Exporting JSON", "language_" + languageKey, "json", "Export...");
+        else
+            path = EditorUtility.SaveFilePanelInProject("Exporting CSV", "language_" + languageKey, "csv", "Export...");
+        if (!string.IsNullOrEmpty(path))
         {
             File.WriteAllText(path, LanguageToString());
             AssetDatabase.Refresh();
             var asset = AssetDatabase.LoadMainAssetAtPath(path);
             EditorGUIUtility.PingObject(asset);
-            if (EditorUtility.DisplayDialog("Open File?", "Do you want to open " + path + "?", "Yes", "Cancel"))
+            if (EditorUtility.DisplayDialog("View File?", "Do you want to open your exported file " + path + " in an external application?", "Yes", "No"))
                 AssetDatabase.OpenAsset(asset);
         }
-        catch (System.Exception ex)
+    }
+
+    public void OnClickImportFromFile()
+    {
+        var path = EditorUtility.OpenFilePanelWithFilters("Select file", "Assets/", new [] {"CSV", "csv"});
+        if (!string.IsNullOrEmpty(path))
         {
-            Debug.LogError(ex.ToString());
+            string contents = File.ReadAllText(path);
+            LanguageManager.languageList.Add(LanguageFromString(contents));
         }
     }
 
@@ -91,15 +92,15 @@ public class LanguageManagerImportExport : MonoBehaviour
         }
     }
 
-    private Language LanguageFromString()
+    private Language LanguageFromString(string data)
     {
         if (useJsonNotCsv)
         {
-            return JsonUtility.FromJson<Language>(text);
+            return JsonUtility.FromJson<Language>(data);
         }
         else
         {
-            return LanguageFromCsv(text, languageKey, escapeExcelFormulas);
+            return LanguageFromCsv(data, languageKey, escapeExcelFormulas);
         }
     }
 
